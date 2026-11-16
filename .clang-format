@@ -1,0 +1,21 @@
+# Style de formatage du projet C (clang-format).
+# `make format` applique ce style, `make format-check` le verifie.
+# Ce fichier est aussi lu par clang-tidy via `FormatStyle: file`.
+BasedOnStyle: LLVM
+IndentWidth: 2
+ContinuationIndentWidth: 4
+ColumnLimit: 80
+BreakBeforeBraces: Attach
+PointerAlignment: Right
+SpaceBeforeParens: ControlStatements
+IndentCaseLabels: false
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+SpacesBeforeTrailingComments: 2
+SortIncludes: false
+AlignTrailingComments: true
+MaxEmptyLinesToKeep: 1
+# Garde le type de retour sur la ligne de la fonction plutot que de le
+# separer, afin de conserver l'alignement des parametres.
+PenaltyReturnTypeOnItsOwnLine: 1000

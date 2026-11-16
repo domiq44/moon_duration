@@ -1,0 +1,147 @@
+<!doctype html>
+<!--
+  index.html
+  Page unique de l'outil : formulaire de saisie, résultats et
+  graphique lunaire.
+-->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <!-- CSP : aucun appel réseau sortant ; le binaire WebAssembly est chargé
+         depuis la même origine (connect-src), compilation via wasm-unsafe-eval. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f6fb">
+    <title>Durée lunaire | Moon Duration</title>
+    <link rel="stylesheet" href="styles.css?v=9">
+    <script src="js/app.js?v=17" type="module"></script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topline">
+        <div class="wordmark"><span class="mark" aria-hidden="true">☾</span> Moon Duration</div>
+        <div class="topline-actions">
+          <span class="range-note">Dates disponibles : 1900 à 3000</span>
+          <label class="theme-control" for="theme-select">
+            <span>Thème</span>
+            <span class="select-wrap">
+              <select id="theme-select" aria-label="Choisir le thème">
+                <option value="system">Appareil</option>
+                <option value="light">Clair</option>
+                <option value="dark">Sombre</option>
+              </select>
+            </span>
+          </label>
+        </div>
+      </header>
+      <section class="heading" aria-labelledby="page-title">
+        <p class="eyebrow">Calcul astronomique</p>
+        <h1 id="page-title">Durée lunaire</h1>
+      </section>
+      <section class="workspace" aria-label="Calculateur de durée lunaire">
+        <form class="controls" id="calculator-form">
+          <h2 class="section-title">Paramètres</h2>
+          <div class="field">
+            <div class="label-row"><label for="date-input">Date</label><span class="field-hint">Jour local</span></div>
+            <div class="date-row">
+              <input id="date-input" name="date" type="date" min="1900-01-01" max="3000-12-31" required>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label-row"><label for="time-input">Heure</label><span class="field-hint">Heure locale</span></div>
+            <div class="date-row">
+              <input id="time-input" name="time" type="time" value="12:00" required>
+              <button class="button" id="now-button" type="button">Maintenant</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label-row"><label for="city-input">Ville</label></div>
+            <div class="city-picker">
+              <input id="city-input" type="search" placeholder="Rechercher une ville…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-suggestions">
+              <ul class="city-suggestions" id="city-suggestions" role="listbox" hidden></ul>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label-row"><label for="latitude-input">Latitude</label><span class="field-hint">Nord + · Sud −</span></div>
+            <div class="latitude-row">
+              <div class="latitude-number">
+                <input id="latitude-input" name="latitude" type="number" min="-90" max="90" step="0.01" value="48.8566" inputmode="decimal" required>
+                <span class="unit" aria-hidden="true">°</span>
+              </div>
+              <button class="button" id="location-button" type="button" aria-label="Utiliser ma position">⌖ Position</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label-row"><label for="longitude-input">Longitude</label><span class="field-hint">Est + · Ouest −</span></div>
+            <div class="latitude-number">
+              <input id="longitude-input" name="longitude" type="number" min="-180" max="180" step="0.01" value="2.3522" inputmode="decimal" required>
+              <span class="unit" aria-hidden="true">°</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="label-row"><label for="timezone-select">Fuseau horaire</label></div>
+            <div class="select-wrap">
+              <select id="timezone-select" name="timezone">
+                <option value="auto" selected>Automatique</option>
+                <option value="Europe/Paris">Europe centrale · CET/CEST</option>
+                <option value="Europe/London">Royaume-Uni · GMT/BST</option>
+                <option value="Europe/Amsterdam">Amsterdam · CET/CEST</option>
+                <option value="Europe/Berlin">Berlin · CET/CEST</option>
+                <option value="Europe/Lisbon">Lisbonne · WET/WEST</option>
+                <option value="Europe/Madrid">Madrid · CET/CEST</option>
+                <option value="Europe/Prague">Prague · CET/CEST</option>
+                <option value="Europe/Rome">Rome · CET/CEST</option>
+                <option value="Europe/Stockholm">Stockholm · CET/CEST</option>
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">New York · ET</option>
+                <option value="America/Los_Angeles">Los Angeles · PT</option>
+                <option value="Asia/Dubai">Dubaï · GST</option>
+                <option value="Asia/Tokyo">Tokyo · JST</option>
+                <option value="Australia/Sydney">Sydney · AET</option>
+              </select>
+            </div>
+          </div>
+          <p class="status" id="status-message" role="status" aria-live="polite"></p>
+        </form>
+        <section class="results" aria-labelledby="result-heading">
+          <div class="result-top">
+            <div><p class="result-date" id="result-date"></p><h2 class="result-heading" id="result-heading">Visibilité lunaire</h2></div>
+            <span class="model-chip" id="phase-chip">—</span>
+          </div>
+          <div class="duration-line" aria-live="polite">
+            <output class="duration-value" id="duration-value">— h — min</output>
+            <span class="duration-unit">entre lever et coucher</span>
+          </div>
+          <div class="stats" aria-label="Détails du calcul">
+            <div class="stat"><span class="stat-label">Lever de la Lune</span><span class="stat-value" id="moonrise-value">—</span></div>
+            <div class="stat"><span class="stat-label">Coucher de la Lune</span><span class="stat-value" id="moonset-value">—</span></div>
+            <div class="stat"><span class="stat-label">Illumination</span><span class="stat-value" id="illumination-value">—</span></div>
+            <div class="stat"><span class="stat-label">Inclinaison du limbe</span><span class="stat-value" id="inclination-value">—</span></div>
+          </div>
+          <div class="moon-row">
+            <div class="moon-ascii-wrap"><pre id="moon-ascii" class="moon-ascii" aria-label="Phase lunaire en ASCII"></pre></div>
+            <div class="moon-details">
+              <p class="moon-phase" id="moon-phase-label">—</p>
+              <p class="footnote" id="preview-note">Phase évaluée à midi local.</p>
+            </div>
+          </div>
+          <div class="chart-heading"><h2>Hauteur de la Lune</h2><span>Heure locale · estimation</span></div>
+          <div class="chart-wrap"><canvas id="moon-chart" role="img" aria-label="Courbe estimée de la hauteur de la Lune pendant la journée"></canvas></div>
+          <div class="legend" aria-hidden="true">
+            <span class="legend-item"><span class="legend-mark above"></span>Au-dessus de l'horizon</span>
+            <span class="legend-item"><span class="legend-mark below"></span>Sous l'horizon</span>
+            <span class="legend-item"><span class="legend-mark"></span>Hauteur lunaire</span>
+            <span class="legend-item"><span class="legend-mark current"></span>Maintenant</span>
+            <span class="legend-item"><span class="legend-mark threshold"></span>Horizon lunaire (0,125°)</span>
+          </div>
+          <p class="footnote">Estimation géométrique : météo, relief et horizon local ne sont pas modélisés.</p>
+        </section>
+      </section>
+      <footer class="page-footer">
+        <span>Réglages conservés dans ce navigateur · aucune donnée n’est envoyée</span>
+        <span id="location-display">Paris · Europe/Paris</span>
+        <button class="button" id="settings-reset" type="button">Réinitialiser les réglages</button>
+      </footer>
+    </main>
+  </body>
+</html>

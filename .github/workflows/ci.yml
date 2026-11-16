@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    name: quality (${{ matrix.compiler }})
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.15
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install quality tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential clang clang-tidy clang-format cppcheck
+
+      - name: Run tests
+        run: make test CC=${{ matrix.compiler }}
+
+      - name: Run tests and fuzzing under sanitizers
+        run: make test_sanitize CC=${{ matrix.compiler }} FUZZ_ITERS=20000
+
+      - name: Test WebAssembly calculator
+        run: make test_web_wasm
+
+      - name: Test web chart
+        run: make test_chart
+
+      - name: Test web date and time helpers
+        run: make test_date_time
+
+      - name: Test web value helpers
+        run: make test_values
+
+      - name: Test web formatting helpers
+        run: make test_format
+
+      - name: Test web city catalog
+        run: make test_cities
+
+      - name: Test web city picker
+        run: make test_city_picker
+
+      - name: Test web settings storage
+        run: make test_settings
+
+      - name: Test web preview
+        run: make test_preview
+
+      - name: Test web preview day offsets
+        run: make test_preview_offsets
+
+      - name: Test web page
+        run: make test_app
+
+      - name: Test web theme
+        run: make test_theme
+
+      - name: Run clang-tidy
+        run: make lint
+
+      - name: Run cppcheck
+        run: make cppcheck
+
+      - name: Check code formatting
+        run: make format-check
+
+      - name: Build release binary
+        run: |
+          make clean
+          make CC=${{ matrix.compiler }} CFLAGS="-O2 -Wall -Wextra -Werror -std=c99 -pedantic -D_POSIX_C_SOURCE=200809L -Iinclude"
+          test -x build/bin/moon_duration
+
+      - name: Build web demo
+        run: |
+          make clean
+          make web_wasm
+          test -s web/js/moon_core.wasm
+
+  coverage:
+    runs-on: ubuntu-latest
+    name: coverage
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install gcov
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential
+
+      - name: Run tests with coverage
+        run: make coverage CC=gcc
+
+      - name: Check coverage thresholds
+        run: make coverage-check

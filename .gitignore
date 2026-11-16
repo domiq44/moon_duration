@@ -1,0 +1,36 @@
+# Objets et binaires
+*.o
+*.obj
+*.a
+*.so
+
+# Dependances
+*.d
+
+# En-tetes precompiles
+*.gch
+*.pch
+
+# Arborescences generees
+build/
+coverage/
+
+# Artefacts WebAssembly
+web/js/moon_core.mjs
+web/js/moon_core.wasm
+
+# Artefacts de couverture
+*.gcda
+*.gcno
+*.gcov
+
+# Editeurs et IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Systeme d'exploitation
+.DS_Store
+Thumbs.db
